@@ -22,6 +22,14 @@ Elixir.extend('imagemin', function(src, output, options) {
   }, options);
 
   new Task('imagemin', function() {
+    this.recordStep('Minifying Images');
+
+    if (paths) {
+      this.paths = paths;
+      this.src = this.paths.src;
+      this.output = this.paths.output;
+    }
+
     return gulp
       .src(paths.src.path)
       .pipe(imagemin(options))
