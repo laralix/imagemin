@@ -1,43 +1,30 @@
-var gulp = require('gulp');
-var changed = require('gulp-changed');
-var imagemin = require('gulp-imagemin');
-var pngquant = require('imagemin-pngquant');
-var _ = require('underscore');
-var elixir = require('laravel-elixir');
-var config = elixir.config;
+const _ = require('underscore');
+const gulp = require('gulp');
+const imagemin = require('gulp-imagemin');
+const pngquant = require('imagemin-pngquant');
 
-elixir.extend('imagemin', function(options) {
-  config.img = _.extend({
-    folder: 'img',
-    outputFolder: 'img'
-  }, config.img || {});
+const Elixir = require('laravel-elixir');
+const Task = Elixir.Task;
+const Config = Elixir.config;
+
+Elixir.extend('imagemin', function(src, output, options) {
+  'use strict';
+
+  const paths = new Elixir.GulpPaths()
+    .src(src || Config.get('assetsPath') + '/img/**/*')
+    .output(output || Config.get('publicPath') + '/img');
 
   options = _.extend({
+    multipass: true,
     progressive: true,
     svgoPlugins: [{ removeViewBox: false }],
     use: [pngquant()]
   }, options);
 
-  new elixir.Task('imagemin', function() {
-    var paths = new elixir.GulpPaths()
-      .src(config.get('assets.img.folder'))
-      .output(config.get('public.img.outputFolder'));
-
-    return gulp.src(paths.src.path)
-      .pipe(changed(paths.output.path))
+  new Task('imagemin', function() {
+    return gulp
+      .src(paths.src.path)
       .pipe(imagemin(options))
-      .on('error', function(e) {
-        new elixir.Notification().error(e, 'ImageMin Failed!');
-        this.emit('end');
-      })
-      .pipe(gulp.dest(paths.output.path))
-      .pipe(new elixir.Notification('ImageMin Complete!'));
-  })
-  .watch([
-    config.get('assets.img.folder') + '/**/*.jpg',
-    config.get('assets.img.folder') + '/**/*.jpeg',
-    config.get('assets.img.folder') + '/**/*.svg',
-    config.get('assets.img.folder') + '/**/*.gif',
-    config.get('assets.img.folder') + '/**/*.png'
-  ]);
+      .pipe(gulp.dest(paths.output.path));
+  });
 });
